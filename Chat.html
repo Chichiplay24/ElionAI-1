@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elion Chat</title>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+/* Variables CSS pour les thèmes */
+:root {
+  --main-bg: #111;
+  --sidebar-bg: #1a1a1a;
+  --header-bg: #1a1a1a;
+  --input-bg: #222;
+  --text-color: #fff;
+  --secondary-color: #aaa;
+  --border-color: #333;
+  --accent-color: #0078ff;
+  --accent-text-color: #000;
+}
+
+.theme-noir {
+  --main-bg: #111;
+  --sidebar-bg: #1a1a1a;
+  --header-bg: #1a1a1a;
+  --input-bg: #222;
+  --text-color: #fff;
+  --secondary-color: #aaa;
+  --border-color: #333;
+  --accent-color: #0078ff;
+  --accent-text-color: #000;
+}
+
+.theme-bleu {
+  --main-bg: #0d1e3d;
+  --sidebar-bg: #122c54;
+  --header-bg: #122c54;
+  --input-bg: #1c3c6f;
+  --text-color: #e0f0ff;
+  --secondary-color: #a5b9d3;
+  --border-color: #36507c;
+  --accent-color: #34a5ff;
+  --accent-text-color: #fff;
+}
+
+.theme-vert {
+  --main-bg: #0c1a17;
+  --sidebar-bg: #102722;
+  --header-bg: #102722;
+  --input-bg: #1b3a32;
+  --text-color: #e0fff0;
+  --secondary-color: #9cbca4;
+  --border-color: #366456;
+  --accent-color: #4CAF50;
+  --accent-text-color: #fff;
+}
+
+.theme-blanc {
+  --main-bg: #fafafa;
+  --sidebar-bg: #f0f0f0;
+  --header-bg: #f0f0f0;
+  --input-bg: #fff;
+  --text-color: #333;
+  --secondary-color: #666;
+  --border-color: #e0e0e0;
+  --accent-color: #0078ff;
+  --accent-text-color: #fff;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--main-bg);
+  color: var(--text-color);
+}
+
+/* Sidebar gauche */
+.sidebar {
+  width: 200px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 10px;
+  transition: width 0.3s, background 0.3s;
+}
+.sidebar.closed {
+  width: 60px;
+  align-items: center;
+}
+.sidebar button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  padding: 8px;
+  border-radius: 6px;
+  width: 100%;
+  color: var(--text-color);
+  transition: gap 0.3s, padding 0.3s, background 0.2s;
+}
+.sidebar button:hover { background: var(--border-color); }
+.sidebar.closed button {
+  gap: 0;
+  padding: 8px 0;
+  justify-content: center;
+}
+.sidebar button span {
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.sidebar.closed button span {
+  opacity: 0;
+  pointer-events: none;
+}
+.sidebar button i {
+    width: 18px;
+    height: 18px;
+}
+
+/* Liste des chats */
+.chat-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+  width: 100%;
+  overflow-y: auto;
+}
+.chat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  margin: 4px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  background: transparent;
+  transition: background 0.2s;
+  position: relative;
+}
+.chat-item:hover, .chat-item.selected { background: var(--border-color); }
+.chat-item-name { color: var(--text-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1; }
+
+/* Bouton d'options du chat (les trois points) */
+.chat-options-btn {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 4px;
+}
+.chat-options-btn:hover {
+  background: var(--border-color);
+  border-radius: 50%;
+}
+
+/* Menu d'options du chat */
+.chat-options-menu {
+  position: absolute;
+  top: 50%;
+  right: -5px;
+  transform: translateY(-50%);
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 5px;
+  display: none;
+  flex-direction: column;
+  z-index: 10;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+.chat-options-menu.open {
+  display: flex;
+}
+.chat-options-menu button {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  padding: 8px 12px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+}
+.chat-options-menu button:hover {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+/* Zone principale */
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--main-bg);
+  transition: background 0.3s;
+  padding: 0;
+}
+
+/* Header Elion */
+.header {
+  padding: 10px 20px;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  transition: background 0.3s;
+}
+.header button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  color: var(--text-color);
+}
+
+/* Dropdown modèle */
+.model-dropdown {
+  position: absolute;
+  top: 50px;
+  left: 20px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  display: none;
+  flex-direction: column;
+  width: 250px;
+  z-index: 30;
+  color: var(--text-color);
+}
+.model-dropdown.open { display: flex; }
+.model-option { padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border-color); color: var(--text-color); }
+.model-option:hover { background: var(--border-color); }
+
+/* Messages */
+.chat-box {
+  flex: 1;
+  padding: 15px 20px;
+  overflow-y: auto;
+  position: relative;
+}
+.message {
+  margin-bottom: 10px;
+}
+.message.user { color: var(--accent-color); }
+.message.bot { color: var(--text-color); }
+
+/* Common styles for message content */
+.message-content {
+  display: inline-block;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+/* Styling for user messages (in bubbles) */
+.user .message-content {
+  background-color: var(--accent-color);
+  color: var(--accent-text-color);
+  padding: 10px 15px;
+  border-radius: 18px;
+}
+
+/* Styling for bot messages (as plain text) */
+.bot .message-content {
+  background-color: transparent;
+  color: var(--text-color);
+  padding: 0;
+  border-radius: 0;
+  font-weight: 500;
+}
+
+.image-container {
+  margin-top: 10px;
+  text-align: center;
+}
+.image-container img {
+  max-width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.tts-button {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  margin-left: 5px;
+  padding: 5px;
+  vertical-align: middle;
+}
+
+/* Bouton pour défiler vers le bas */
+#scroll-to-bottom-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background-color: rgba(26, 26, 26, 0.7);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+#scroll-to-bottom-btn.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+#scroll-to-bottom-btn i {
+  color: var(--text-color);
+}
+
+/* Loading spinner */
+.loader {
+  border: 4px solid var(--secondary-color);
+  border-top: 4px solid var(--accent-color);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+  margin: 10px;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Suggestion buttons */
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 5px 0 15px 0;
+}
+.suggestions button {
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.suggestions button:hover { background: var(--border-color); }
+
+/* Action icons */
+.action-icons { display: flex; gap: 6px; margin-left: 5px; }
+.action-icons button {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 16px;
+}
+.action-icons button:hover { color: var(--accent-color); }
+
+/* Input area */
+.input-area {
+  padding: 10px 15px;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: background 0.3s;
+}
+.input-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.input-top textarea {
+  flex: 1;
+  border-radius: 20px;
+  padding: 10px 15px;
+  background: var(--input-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  outline: none;
+  resize: none;
+  font-size: 15px;
+  transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+.file-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--text-color);
+  cursor: pointer;
+}
+.file-btn:hover { color: var(--accent-color); }
+.send-btn {
+  background: white;
+  border-radius: 50%;
+  padding: 10px;
+  cursor: pointer;
+  color: black;
+}
+.send-btn:hover { background: #eee; }
+
+/* Bottom input options */
+.input-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.note-btn {
+  background: orange;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.note-btn:hover { background: darkorange; }
+
+/* Mini éditeur note */
+#noteEditor {
+  display: none;
+  margin-top:10px;
+  border:1px solid var(--border-color);
+  border-radius:8px;
+  padding:10px;
+  background:var(--input-bg);
+}
+#noteEditor input, #noteEditor textarea {
+  width:100%;
+  padding:8px;
+  border-radius:6px;
+  border:1px solid var(--border-color);
+  margin-bottom:6px;
+  background: var(--sidebar-bg);
+  color: var(--text-color);
+}
+#noteEditor button {
+  background: orange;
+  color:white;
+  border:none;
+  padding:8px 12px;
+  border-radius:6px;
+  cursor:pointer;
+}
+#noteEditor button:hover { background: darkorange; }
+
+/* Styles pour les boutons de feedback */
+.feedback-buttons {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.feedback-buttons button {
+    background: var(--input-bg);
+    color: var(--text-color);
+    border: none;
+    border-radius: 50%;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.feedback-buttons button:hover {
+    background: var(--border-color);
+}
+.feedback-buttons i {
+  width: 16px;
+  height: 16px;
+}
+.sidebar button i {
+    width: 18px;
+    height: 18px;
+}
+
+/* Modals */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+  backdrop-filter: blur(5px);
+  padding-top: 60px;
+}
+.modal-content {
+  background-color: var(--sidebar-bg);
+  margin: 5% auto;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  width: 80%;
+  max-width: 400px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  color: var(--text-color);
+}
+.modal-content h3 {
+  margin-top: 0;
+  color: var(--text-color);
+}
+.modal-content p {
+  color: var(--secondary-color);
+}
+.modal-content .price {
+  font-size: 2em;
+  font-weight: bold;
+  color: var(--text-color);
+  text-align: center;
+  margin: 20px 0;
+}
+.modal-content input {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+  color: var(--text-color);
+  border-radius: 8px;
+}
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.modal-buttons .confirm-btn {
+  background-color: var(--accent-color);
+  color: var(--accent-text-color);
+}
+.modal-buttons .cancel-btn {
+  background-color: var(--border-color);
+  color: var(--text-color);
+}
+.modal-content .start-btn {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.2em;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--accent-color);
+  color: white;
+  cursor: pointer;
+}
+.modal-content .start-btn:hover {
+  background-color: #005bb5;
+}
+</style>
+</head>
+<body class="theme-noir">
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <button onclick="toggleSidebar()"><i data-lucide="menu"></i><span> Menu</span></button>
+  <button onclick="newChat()"><i data-lucide="plus"></i><span> Nouveau Chat</span></button>
+  <ul id="chat-list" class="chat-list"></ul>
+</div>
+
+<!-- Zone principale -->
+<div class="chat-container">
+  <div class="header">
+    <button onclick="toggleModelMenu()">
+      ✨ Elion <i data-lucide="chevron-down"></i>
+    </button>
+    <div id="modelMenu" class="model-dropdown">
+      <div class="model-option" onclick="selectModel('Standard')">
+        <div class="model-title">Elion Standard</div>
+        <div class="model-desc">Idéal pour bavardage et tâches quotidiennes</div>
+      </div>
+      <div class="model-option" onclick="selectModel('Pro')">
+        <div class="model-title">Elion Pro</div>
+        <div class="model-desc">Plus évolué pour plus de tâches (Bientôt)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div id="chatBox" class="chat-box">
+    <!-- Bouton pour défiler vers le bas -->
+    <button id="scroll-to-bottom-btn" onclick="scrollToBottom()"><i data-lucide="chevron-down"></i></button>
+  </div>
+
+  <!-- Zone de saisie -->
+  <div class="input-area">
+    <div class="input-top">
+      <!-- Hidden file input for file selection -->
+      <input type="file" id="fileInput" accept="text/*" style="display: none;">
+      <!-- The file button now triggers the click on the hidden input -->
+      <button class="file-btn" title="Importer un fichier" onclick="document.getElementById('fileInput').click()"><i data-lucide="plus"></i></button>
+      <textarea id="userInput" placeholder="Demander à Elion..." rows="1"></textarea>
+      <button class="send-btn" onclick="sendMessage()"><i data-lucide="arrow-up"></i></button>
+    </div>
+    <div class="input-bottom">
+      <button class="note-btn" onclick="toggleNoteEditor()"><i data-lucide="edit-3"></i> Note</button>
+    </div>
+
+    <!-- Mini éditeur note -->
+    <div id="noteEditor">
+      <input id="noteTitle" type="text" placeholder="Titre de la note">
+      <textarea id="noteContent" rows="3" placeholder="Écrire la note ici..."></textarea>
+      <button onclick="saveNote()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div id="renameModal" class="modal">
+  <div class="modal-content">
+    <h3>Renommer le chat</h3>
+    <input type="text" id="renameInput" placeholder="Nouveau nom">
+    <div class="modal-buttons">
+      <button class="cancel-btn" onclick="closeModal('renameModal')">Annuler</button>
+      <button class="confirm-btn" onclick="performRename()">Renommer</button>
+    </div>
+  </div>
+</div>
+
+<div id="deleteModal" class="modal">
+  <div class="modal-content">
+    <h3>Supprimer le chat</h3>
+    <p>Êtes-vous sûr de vouloir supprimer ce chat ?</p>
+    <div class="modal-buttons">
+      <button class="cancel-btn" onclick="closeModal('deleteModal')">Annuler</button>
+      <button class="confirm-btn" onclick="performDelete()">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<div id="proSubscriptionModal" class="modal">
+  <div class="modal-content">
+    <h3>Abonnement Elion Pro</h3>
+    <p>Passez au niveau supérieur et libérez tout le potentiel d'Elion Pro avec des fonctionnalités avancées et une vitesse de génération encore plus rapide !</p>
+    <div class="price">9.99€/mois</div>
+    <button class="start-btn" onclick="openModal('paymentAlertModal'); closeModal('proSubscriptionModal');">Commencer</button>
+  </div>
+</div>
+
+<div id="paymentAlertModal" class="modal">
+  <div class="modal-content">
+    <h3>Information</h3>
+    <p>La fonctionnalité de paiement sera bientôt disponible. Merci de votre intérêt !</p>
+    <div class="modal-buttons">
+      <button class="confirm-btn" onclick="closeModal('paymentAlertModal')">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+lucide.createIcons();
+
+// Variables globales
+let chatHistory = {};
+let currentChatId = null;
+let chatCounter = 1;
+let currentChatToRename = null;
+
+// Suggestions
+let suggestionsList = [
+  {question:"Que peux-tu faire pour moi ?", text: "Je suis un modèle de langage et je peux vous aider avec des questions, de la créativité et des tâches."},
+   {question:"c'est quoi Elion Pro ?", text: "Elion Pro est une version améliorée de Elion avec des fonctionnalités avancées et une vitesse de génération plus rapide."}
+];
+
+// Fonctions utilitaires pour l'API Gemini
+const API_KEY = "AIzaSyA8L4VKSW5rYsH48MRCbmilGHnv8bZ3uVA"; // Laissez la clé vide, elle sera fournie par l'environnement
+const TEXT_MODEL = "gemini-1.5-flash-8b-latest"; // On utilise un modèle textuel
+const TTS_MODEL = "gemini-1.5-flash-8b-latest";
+
+// Fonctions pour la sidebar
+function toggleSidebar() { document.getElementById("sidebar").classList.toggle("closed"); }
+
+// Fonctions pour les modèles
+function toggleModelMenu() { document.getElementById("modelMenu").classList.toggle("open"); }
+function selectModel(model) { 
+  document.getElementById("modelMenu").classList.remove("open"); 
+  if (model === 'Pro') {
+    openModal('proSubscriptionModal');
+  } else {
+    // Affiche un message d'information pour la sélection de modèle
+    appendMessage("📌 Elion Standard est uniquement disponible pour le moment.");
+  }
+}
+
+// Fonctions pour les messages
+function saveMessageToHistory(content, type="bot", isImage=false, isTTS=false) {
+  if (currentChatId) {
+    if (!chatHistory[currentChatId]) {
+      chatHistory[currentChatId] = [];
+    }
+    chatHistory[currentChatId].push({ text: content, type: type, isImage: isImage, isTTS: isTTS });
+  }
+}
+
+function appendMessage(content, type="bot", isImage=false, isTTS=false, save=true) {
+  const box = document.getElementById('chatBox');
+  const msg = document.createElement('div');
+  msg.className = `message ${type}`;
+
+  if (isImage) {
+    const imgContainer = document.createElement('div');
+    imgContainer.className = 'image-container';
+    const img = document.createElement('img');
+    img.src = content;
+    img.alt = "Image générée par l'IA";
+    imgContainer.appendChild(img);
+    msg.appendChild(imgContainer);
+  } else {
+    const contentSpan = document.createElement('span');
+    contentSpan.className = 'message-content';
+    contentSpan.textContent = content;
+    msg.appendChild(contentSpan);
+
+    if (type === 'bot' && isTTS) {
+        const ttsBtn = document.createElement('button');
+        ttsBtn.className = 'tts-button';
+        ttsBtn.innerHTML = `<i data-lucide="volume-2"></i>`;
+        ttsBtn.title = "Lire à voix haute";
+        ttsBtn.onclick = () => playTTS(content);
+        msg.appendChild(ttsBtn);
+        lucide.createIcons();
+    }
+  }
+
+  if (type === 'bot') {
+    const feedbackButtons = document.createElement('div');
+    feedbackButtons.className = 'feedback-buttons';
+    const likeBtn = document.createElement('button');
+    likeBtn.title = "Bonne réponse";
+    likeBtn.innerHTML = `<i data-lucide="thumbs-up"></i>`;
+    likeBtn.onclick = () => handleFeedback('like');
+    const dislikeBtn = document.createElement('button');
+    dislikeBtn.title = "Mauvaise réponse";
+    dislikeBtn.innerHTML = `<i data-lucide="thumbs-down"></i>`;
+    dislikeBtn.onclick = () => handleFeedback('dislike');
+    const copyBtn = document.createElement('button');
+    copyBtn.title = "Copier la réponse";
+    copyBtn.innerHTML = `<i data-lucide="clipboard"></i>`;
+    copyBtn.onclick = () => copyMessage(content);
+
+    feedbackButtons.appendChild(likeBtn);
+    feedbackButtons.appendChild(dislikeBtn);
+    feedbackButtons.appendChild(copyBtn);
+    msg.appendChild(feedbackButtons);
+    lucide.createIcons();
+  }
+
+  box.appendChild(msg);
+  box.scrollTop = box.scrollHeight;
+  if(save) saveMessageToHistory(content, type, isImage, isTTS);
+}
+
+// Fonction pour jouer l'audio TTS
+async function playTTS(text) {
+    const audio = new Audio();
+    const payload = {
+        contents: [{
+            parts: [{ text: text }]
+        }],
+        generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+                voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName: "Algieba" }
+                }
+            }
+        },
+        model: TTS_MODEL
+    };
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${API_KEY}`;
+
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            throw new Error(`Erreur réseau: ${response.status}`);
+        }
+        const result = await response.json();
+        const part = result?.candidates?.[0]?.content?.parts?.[0];
+        const audioData = part?.inlineData?.data;
+        const mimeType = part?.inlineData?.mimeType;
+
+        if (audioData && mimeType && mimeType.startsWith("audio/")) {
+            const pcmData = base64ToArrayBuffer(audioData);
+            const pcm16 = new Int16Array(pcmData);
+            const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)[1], 10) || 24000;
+            const wavBlob = pcmToWav(pcm16, sampleRate);
+            audio.src = URL.createObjectURL(wavBlob);
+            audio.play();
+        } else {
+            console.error("Les données audio sont manquantes ou incorrectes.");
+        }
+    } catch (error) {
+        console.error("Erreur lors de la génération de la parole:", error);
+    }
+}
+
+// Fonctions utilitaires pour audio
+function base64ToArrayBuffer(base64) {
+    const binaryString = window.atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+function pcmToWav(pcmData, sampleRate) {
+    const numChannels = 1;
+    const bytesPerSample = 2;
+    const blockAlign = numChannels * bytesPerSample;
+    const byteRate = sampleRate * blockAlign;
+    const dataLength = pcmData.length * bytesPerSample;
+    const buffer = new ArrayBuffer(44 + dataLength);
+    const view = new DataView(buffer);
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + dataLength, true);
+    writeString(view, 8, 'WAVE');
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bytesPerSample * 8, true);
+    writeString(view, 36, 'data');
+    view.setUint32(40, dataLength, true);
+    for (let i = 0; i < pcmData.length; i++) {
+        view.setInt16(44 + i * 2, pcmData[i], true);
+    }
+    return new Blob([view], { type: 'audio/wav' });
+}
+function writeString(view, offset, string) {
+    for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+    }
+}
+
+// Fonctions de chat
+function clearChatBox() { document.getElementById('chatBox').innerHTML = ""; }
+function loadChat(chatId) {
+  clearChatBox();
+  currentChatId = chatId;
+  const history = chatHistory[chatId] || [];
+  history.forEach(msg => appendMessage(msg.text, msg.type, msg.isImage, msg.isTTS, false)); // Ne pas sauvegarder à nouveau
+  document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('selected'));
+  document.querySelector(`[data-chat-id="${chatId}"]`).classList.add('selected');
+}
+
+// Nouveau chat
+function newChat() {
+  const newChatId = `chat-${chatCounter++}`;
+  chatHistory[newChatId] = [];
+  const chatList = document.getElementById('chat-list');
+  const chatItem = document.createElement('li');
+  chatItem.className = 'chat-item';
+  chatItem.dataset.chatId = newChatId;
+
+  const chatNameSpan = document.createElement('span');
+  chatNameSpan.className = 'chat-item-name';
+  chatNameSpan.textContent = `Nouveau Chat ${chatCounter-1}`;
+  chatNameSpan.onclick = () => loadChat(newChatId);
+  chatItem.appendChild(chatNameSpan);
+
+  const optionsBtn = document.createElement('button');
+  optionsBtn.className = 'chat-options-btn';
+  optionsBtn.innerHTML = `<i data-lucide="more-vertical"></i>`;
+  optionsBtn.onclick = (event) => showChatOptions(newChatId, event, optionsBtn);
+  chatItem.appendChild(optionsBtn);
+
+  const optionsMenu = document.createElement('div');
+  optionsMenu.className = 'chat-options-menu';
+  optionsMenu.innerHTML = `
+    <button onclick="openRenameModal('${newChatId}')"><i data-lucide="edit"></i> Renommer</button>
+    <button onclick="openDeleteModal('${newChatId}')"><i data-lucide="trash-2"></i> Supprimer</button>
+  `;
+  chatItem.appendChild(optionsMenu);
+
+  chatList.prepend(chatItem);
+  loadChat(newChatId);
+  showSuggestions();
+  appendMessage("Bonjour, je suis Elion. Que puis-je faire pour vous aujourd'hui ?");
+  lucide.createIcons();
+}
+
+// Fonctions des modals
+function openModal(modalId) { document.getElementById(modalId).style.display = 'block'; }
+function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+function openRenameModal(chatId) {
+  currentChatToRename = chatId;
+  closeAllChatMenus();
+  openModal('renameModal');
+  document.getElementById('renameInput').focus();
+}
+function performRename() {
+  const newName = document.getElementById('renameInput').value.trim();
+  if (newName) {
+    const chatItem = document.querySelector(`[data-chat-id="${currentChatToRename}"]`);
+    if (chatItem) {
+      chatItem.querySelector('.chat-item-name').textContent = newName;
+    }
+  }
+  document.getElementById('renameInput').value = '';
+  closeModal('renameModal');
+}
+function openDeleteModal(chatId) {
+  currentChatToRename = chatId; // Utiliser la même variable pour le chat à supprimer
+  closeAllChatMenus();
+  openModal('deleteModal');
+}
+function performDelete() {
+  const chatIdToDelete = currentChatToRename;
+  const chatItem = document.querySelector(`[data-chat-id="${chatIdToDelete}"]`);
+  if (chatItem) {
+    chatItem.remove();
+    delete chatHistory[chatIdToDelete];
+    if (document.querySelectorAll('.chat-item').length === 0) {
+      newChat();
+    } else if (currentChatId === chatIdToDelete) {
+      // Si le chat supprimé est celui qui est ouvert, on sélectionne le premier de la liste
+      loadChat(document.querySelector('.chat-item').dataset.chatId);
+    }
+  }
+  closeModal('deleteModal');
+}
+function closeAllChatMenus() {
+  document.querySelectorAll('.chat-options-menu.open').forEach(menu => {
+    menu.classList.remove('open');
+  });
+}
+
+// Afficher le menu d'options
+function showChatOptions(chatId, event, button) {
+  event.stopPropagation();
+  const optionsMenu = button.parentNode.querySelector('.chat-options-menu');
+  closeAllChatMenus();
+  optionsMenu.classList.add('open');
+}
+
+// Événement pour fermer les menus d'options si l'utilisateur clique ailleurs
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('.chat-options-menu') && !event.target.closest('.chat-options-btn')) {
+    closeAllChatMenus();
+  }
+});
+
+// Fonctions pour les suggestions
+function hideSuggestions() {
+    const suggestions = document.querySelector('.suggestions');
+    if (suggestions) {
+        suggestions.remove();
+    }
+}
+function showSuggestions() {
+  const box = document.getElementById('chatBox');
+  const sugDiv = document.createElement('div');
+  sugDiv.className = 'suggestions';
+  suggestionsList.forEach(s => {
+    const btn = document.createElement('button');
+    btn.textContent = s.question;
+    btn.onclick = () => {
+        document.getElementById('userInput').value = s.question;
+        sendMessage();
+    };
+    sugDiv.appendChild(btn);
+  });
+  box.appendChild(sugDiv);
+  box.scrollTop = box.scrollHeight;
+}
+
+// Fonction principale pour envoyer un message
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if(!text) return;
+
+  hideSuggestions();
+  appendMessage(text, 'user');
+  input.value = '';
+
+  const loader = document.createElement('div');
+  loader.className = 'loader';
+  document.getElementById('chatBox').appendChild(loader);
+
+  try {
+    await generateText(text);
+  } catch (error) {
+    console.error("Erreur lors de la communication avec le modèle :", error);
+    // Afficher l'erreur à l'utilisateur
+    appendMessage("Désolé, une erreur est survenue lors de la communication avec l'API. Si le problème persiste, veuillez contacter le support.", 'bot');
+  } finally {
+    loader.remove();
+    document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
+  }
+}
+
+// Fonction pour générer du texte
+async function generateText(prompt) {
+    const chatHistoryForAPI = chatHistory[currentChatId].map(msg => ({
+        role: msg.type === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text }]
+    }));
+    chatHistoryForAPI.push({ role: 'user', parts: [{ text: prompt }] });
+    const payload = { contents: chatHistoryForAPI };
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${TEXT_MODEL}:generateContent?key=${API_KEY}`;
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        // Le modèle de langage est 'model', pas 'bot'
+        const generatedText = result?.candidates?.[0]?.content?.parts?.[0]?.text || "Désolé, je n'ai pas pu générer de réponse.";
+        appendMessage(generatedText, 'bot', false, true);
+    } catch (error) {
+        console.error("Erreur de génération de texte:", error);
+        throw error;
+    }
+}
+
+// Fonction pour l'éditeur de note
+function toggleNoteEditor() {
+  const editor = document.getElementById('noteEditor');
+  editor.style.display = editor.style.display==='none'?'block':'none';
+}
+function saveNote() {
+  const title = document.getElementById('noteTitle').value;
+  const content = document.getElementById('noteContent').value;
+  appendMessage(`📝 Note enregistrée : ${title?title+" - ":""}${content}`);
+  document.getElementById('noteTitle').value='';
+  document.getElementById('noteContent').value='';
+  document.getElementById('noteEditor').style.display='none';
+}
+
+// Fonction pour gérer le feedback
+function handleFeedback(type) {
+  if (type === 'like') {
+    appendMessage("Merci pour votre retour !");
+  } else {
+    appendMessage("Merci pour votre retour. Je vais apprendre à mieux m'améliorer !");
+  }
+}
+
+// Fonction pour copier le message
+function copyMessage(text) {
+  const tempTextarea = document.createElement('textarea');
+  tempTextarea.value = text;
+  document.body.appendChild(tempTextarea);
+  tempTextarea.select();
+  try {
+    document.execCommand('copy');
+    appendMessage("Le message a été copié dans votre presse-papiers !", 'bot');
+  } catch (err) {
+    console.error('Impossible de copier le message :', err);
+  }
+  document.body.removeChild(tempTextarea);
+}
+
+
+// Fonction pour défiler vers le bas
+function scrollToBottom() {
+  const chatBox = document.getElementById('chatBox');
+  chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+}
+
+// Gestion des événements
+document.getElementById('userInput').addEventListener('keydown', function(e){
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+});
+
+// Événement pour afficher/masquer le bouton de défilement
+const chatBox = document.getElementById('chatBox');
+const scrollBtn = document.getElementById('scroll-to-bottom-btn');
+chatBox.addEventListener('scroll', () => {
+  const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 1;
+  if (!isAtBottom) {
+    scrollBtn.classList.add('visible');
+  } else {
+    scrollBtn.classList.remove('visible');
+  }
+});
+
+// New file upload handling
+const fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        if (file.type.startsWith('text/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const fileContent = e.target.result;
+                appendMessage(`Fichier "${file.name}" a été chargé.`, 'user');
+                appendMessage(fileContent, 'bot');
+            };
+            reader.onerror = () => {
+                appendMessage("Une erreur s'est produite lors de la lecture du fichier.", 'bot');
+            };
+            reader.readAsText(file);
+        } else {
+            appendMessage("Ce type de fichier n'est pas pris en charge. Veuillez sélectionner un fichier texte.", 'bot');
+        }
+    }
+});
+
+
+// Initialiser un nouveau chat au chargement
+newChat();
+</script>
+</body>
+</html>
