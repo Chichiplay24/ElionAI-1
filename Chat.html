@@ -953,7 +953,7 @@ function newChat(event) {
 }
 
 function appendWelcomeMessage() {
-    const welcomeText = `Bonjour (nom de l'utilisateur), je me nomme Elion. Je suis là pour parler avec vous sur Sonic.
+    const welcomeText = `Bonjour, je me nomme Elion. Je suis là pour parler avec vous sur Sonic.
 
 Actuellement, je peux :
 - Raconter 120 blagues
@@ -1051,7 +1051,7 @@ async function sendMessage() {
         parts: [{ text: "Vous êtes un assistant IA nommé Elion. Répondez aux questions avec des informations complètes et détaillées, en utilisant des citations lorsque c'est nécessaire. Si vous ne pouvez pas répondre à la question, exprimez-vous poliment." }]
     }
   };
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${TEXT_MODEL}:generateContent?key=${API_KEY}`;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gemini-1.5-flash-8b-latest}:generateContent?key=${AIzaSyA8L4VKSW5rYsH48MRCbmilGHnv8bZ3uVA}`;
   
   try {
     const response = await fetch(apiUrl, {
